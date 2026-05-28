@@ -1,4 +1,3 @@
-// tests/e2e.spec.js
 import { test, expect } from '@playwright/test';
 
 test('home page loads', async ({ page }) => {
