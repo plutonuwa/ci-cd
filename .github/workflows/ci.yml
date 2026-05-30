@@ -39,14 +39,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with:
+          node-version: '20'
+          cache: 'npm'
       - run: npm install
       - run: npx playwright install --with-deps chromium
       - name: Start app & run E2E tests
         run: |
           npm start &        # start the server in background
           sleep 3            # wait for it to boot
-          npx playwright test tests/e2e/ --reporter=html
+          npx playwright test
           
   apitests:
     runs-on: ubuntu-lastest
