@@ -2,50 +2,43 @@ pipeline {
     agent any
 
     tools {
-        // This ensures Node.js is installed. 
-        // Note: 'node20' must match the name configured in your Jenkins Global Tool Configuration.
-        nodejs 'node20' 
+        nodejs 'node20'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Pulls the code from your Git repository
                 checkout scm
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                // Equivalent to 'npm ci'
-                sh 'npm ci'
+                bat 'npm ci'         // bat = Windows CMD, replaces sh
             }
         }
 
         stage('Unit Tests') {
             steps {
-                // Equivalent to your 'test' job steps
-                sh 'chmod +x node_modules/.bin/jest'
-                sh 'npm test'
+                bat 'npm test'       // no need for chmod on Windows
             }
         }
 
         stage('Linting') {
             steps {
-                // The '|| true' ensures the pipeline doesn't fail if linting fails, just like GitHub Actions
-                sh 'npx eslint src/ --ext .js || true'
+                // cmd /c makes || true equivalent work on Windows
+                bat 'npx eslint src/ --ext .js || exit /b 0'
             }
         }
 
         stage('E2E Tests') {
             steps {
-                // Jenkins stages run sequentially by default, so this naturally acts like 'needs: test'
-                sh 'npx playwright install --with-deps chromium'
-                
-                // Running the server in the background and waiting for it to boot
-                sh '''
-                    npm start &
-                    sleep 3
+                bat 'npx playwright install --with-deps chromium'
+
+                // Start server in background on Windows using START
+                bat '''
+                    START /B npm start
+                    timeout /t 3 /nobreak
                     npx playwright test
                 '''
             }
@@ -54,8 +47,8 @@ pipeline {
 
     post {
         always {
-            // Clean up any background node processes left running from the E2E stage
-            sh 'pkill -f "node" || true'
+            // Kill node processes on Windows
+            bat 'taskkill /F /IM node.exe /T || exit /b 0'
         }
     }
 }
