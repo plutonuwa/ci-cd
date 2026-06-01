@@ -62,8 +62,12 @@ jobs:
         with: { python-version: '3.12' }
 
       - name: Install dependencies
-        run: python -m venv .venv  
-        run: source .venv/bin/activate && pip install -r ./backend/requirements.txt
+        run: |
+            python -m venv .venv  
+            source .venv/bin/activate 
+            pip install -r ./backend/requirements.txt
 
       - name: Run API tests
-        run: source .venv/bin/activate && pytest ./backend/test.py
+        run: |
+            source .venv/bin/activate 
+            pytest ./backend/test.py
