@@ -54,10 +54,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: python -m venv .venv  
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - run: source .venv/bin/activate && pip install -r ./backend/requirements.txt
-      - run: source .venv/bin/activate && pytest ./backend/test.py
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Install dependencies
+        run: python -m venv .venv  
+        run: source .venv/bin/activate && pip install -r ./backend/requirements.txt
+
+      - name: Run API tests
+        run: source .venv/bin/activate && pytest ./backend/test.py

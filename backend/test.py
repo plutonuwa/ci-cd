@@ -31,4 +31,16 @@ def test_root_message():
     response = client.get("/")
     assert response.json()["message"] == "Hello World"
 
+def test_read_items():
+    response = client.get("items")
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+def test_create_item():
+    new_item = {"name":"Item 3","price":44}
+    response = client.post("/items", json=new_item)
+    assert response.status_code == 200
+    assert response.json()["status"] == "success"
+
+
 # Code Execution command: pytest .\backend\test.py

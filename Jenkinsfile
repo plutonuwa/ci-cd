@@ -43,6 +43,15 @@ pipeline {
                 '''
             }
         }
+        stage('API tests'){
+            steps{
+                bat 'python -m venv .venv'
+                // CRITICAL: We call the executable directly from the venv folder 
+                // because separate 'bat' sessions don't persist environment activations.
+                bat '.venv\\Scripts\\pip install -r ./backend/requirements.txt'
+                bat '.venv\\Scripts\\pytest ./backend/test.py'
+            }
+        }
     }
 
     post {
