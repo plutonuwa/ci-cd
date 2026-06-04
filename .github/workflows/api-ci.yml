@@ -31,7 +31,7 @@ jobs:
   
   create-pr:
     runs-on: ubuntu-latest
-    needs: api-tests              # only runs if api-tests job passed
+    needs: apitests              # only runs if api-tests job passed
     if: github.event_name == 'push' && github.ref == 'refs/heads/api'
  
     # IMPORTANT: this job needs write permission to create PRs
