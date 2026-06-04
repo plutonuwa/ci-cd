@@ -27,7 +27,7 @@ jobs:
       - name: Run API tests
         run: |
             source .venv/bin/activate 
-            pytest
+            pytest ./backend/test -v --tb=short
   
   create-pr:
     runs-on: ubuntu-latest
