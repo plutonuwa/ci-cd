@@ -10,6 +10,7 @@ on:
     types:
       - completed                 # Triggers when the target workflow finishes
 
+
 jobs:
   # --- CD Stage ---
   deploy-to-aws:
