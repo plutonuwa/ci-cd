@@ -14,7 +14,9 @@ jobs:
   # --- CD Stage ---
   deploy-to-aws:
     runs-on: ubuntu-latest
-    needs: apitests # Gatekeeper: Only deploy if tests pass!
+    # This 'if' condition acts as your cross-pipeline gatekeeper!
+    # It ensures deployment ONLY fires if the testing workflow execution was a success.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Execute Remote SSH Commands to Deploy
