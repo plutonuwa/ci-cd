@@ -1,0 +1,119 @@
+name: V1 CI Pipeline
+
+on:
+  push:
+    branches: [v1]
+  pull_request:
+    branches: [v1]
+
+jobs: 
+  apitests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: 'pip' }
+
+      - name: Install dependencies
+        run: |
+            python -m venv .venv  
+            source .venv/bin/activate 
+            pip install -r ./backend/requirements.txt
+
+      - name: Run API tests
+        run: |
+            source .venv/bin/activate 
+            pytest ./backend/tests -v --tb=short
+  
+  # create-pr:
+  #   runs-on: ubuntu-latest
+  #   needs: apitests              # only runs if api-tests job passed
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/v1'
+ 
+  #   # IMPORTANT: this job needs write permission to create PRs
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+ 
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+ 
+  #     - name: Create Pull Request to main
+  #       uses: peter-evans/create-pull-request@v6
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
+  #         base: main                            # PR target branch
+  #         branch: v1-change                   # FIXED: The internal branch name the action uses to track the PR
+  #         title: "✅ API tests passed — merge v1 → main"
+  #         body: |
+  #           ## Automated PR
+ 
+  #           All API tests passed on the `v1` branch.
+ 
+  #           **Triggered by:** ${{ github.actor }}
+  #           **Commit:** ${{ github.sha }}
+  #           **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+ 
+  #           ### What was tested
+  #           - API endpoint tests (pytest)
+ 
+  #           Merge this PR to deploy to production.
+  #         labels: automated, api-tested
+  #         draft: false
+
+  # create-pr:
+  #   runs-on: ubuntu-latest
+  #   needs: apitests              # Only runs if api-tests job passed
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/v1'
+ 
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+ 
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: create pr
+  #       uses: peter-evans/create-pull-request@v7
+  #       with:
+  #         branch: "v1"
+  #         title: "auto update"
+  #         body: "auto update dayo!"
+  #         base: main
+
+
+  # deploy-to-aws:
+    # runs-on: ubuntu-latest
+    # needs: create-pr # Gatekeeper: Only deploy if tests pass!
+    
+    # steps:
+    #   - name: Execute Remote SSH Commands to Deploy
+    #     uses: appleboy/ssh-action@v1.0.3
+    #     with:
+    #       host: ${{ secrets.AWS_EC2_IP }}
+    #       username: ${{ secrets.AWS_SSH_USERNAME }}
+    #       key: ${{ secrets.AWS_SSH_KEY }}
+    #       script: |
+    #         # Navigate to the project folder on EC2
+    #         cd ~/ci-cd
+            
+    #         # Fetch and pull the newest code from main
+    #         git pull origin main
+            
+    #         # Activate environment and update any new dependencies
+    #         source .venv/bin/activate
+    #         pip install -r backend/requirements.txt
+            
+    #         # Stop any older FastAPI instances running on port 8000
+    #         fuser -k 8000/tcp || true
+            
+    #         # Start FastAPI in the background using nohup (so it stays alive when SSH closes)
+    #         nohup uvicorn backend.main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
+
+    

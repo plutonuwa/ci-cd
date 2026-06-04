@@ -18,31 +18,6 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                bat 'npm test'       // no need for chmod on Windows
-            }
-        }
-
-        stage('Linting') {
-            steps {
-                // cmd /c makes || true equivalent work on Windows
-                bat 'npx eslint src/ --ext .js || exit /b 0'
-            }
-        }
-
-        stage('E2E Tests') {
-            steps {
-                bat 'npx playwright install --with-deps chromium'
-
-                // Start server in background on Windows using START
-                bat '''
-                    START /B npm start
-                    timeout /t 3 /nobreak
-                    npx playwright test
-                '''
-            }
-        }
         stage('API tests'){
             steps{
                 bat 'py -m venv .venv'

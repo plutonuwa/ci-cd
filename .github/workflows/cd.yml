@@ -1,0 +1,67 @@
+name: AWS EC2 Deployment
+
+on:
+  push:
+    branches: [main]
+
+# on:
+#   workflow_run:
+#     workflows: ["CI Pipeline"]   # Must match the exact 'name:' string at the top of your api-ci.yml file
+#     types:
+#       - completed                 # Triggers when the target workflow finishes
+
+
+jobs:
+  api-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: 'pip' }
+
+      - name: Install dependencies
+        run: |
+            python -m venv .venv  
+            source .venv/bin/activate 
+            pip install -r ./backend/requirements.txt
+
+      - name: Run API tests
+        run: |
+            source .venv/bin/activate 
+            pytest ./backend/tests -v --tb=short
+            
+  # --- CD Stage ---
+  deploy-to-aws:
+    runs-on: ubuntu-latest
+    # # This 'if' condition acts as your cross-pipeline gatekeeper!
+    # # It ensures deployment ONLY fires if the testing workflow execution was a success.
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: api-test   # This ensures the deploy job only runs if the api-test job passed
+    
+    steps:
+      - name: Execute Remote SSH Commands to Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_IP }}
+          username: ${{ secrets.AWS_SSH_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            # Navigate to the project folder on EC2
+            cd ~/ci-cd
+            
+            # Fetch and pull the newest code from main
+            git pull origin main
+            
+            # Activate environment and update any new dependencies
+            source .venv/bin/activate
+            pip install -r backend/requirements.txt
+            
+            # Stop any older FastAPI instances running on port 8000
+            fuser -k 8000/tcp || true
+            
+            # Start FastAPI in the background using nohup (so it stays alive when SSH closes)
+            nohup uvicorn backend.main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
