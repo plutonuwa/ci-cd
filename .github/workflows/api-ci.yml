@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: API CI Pipeline
 
 on:
   push:
@@ -16,7 +16,7 @@ jobs:
 
       - name: Setup Python
         uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+        with: { python-version: '3.12', cache: 'pip' }
 
       - name: Install dependencies
         run: |
@@ -27,4 +27,42 @@ jobs:
       - name: Run API tests
         run: |
             source .venv/bin/activate 
-            pytest ./backend/test.py
+            pytest
+  
+  create-pr:
+    runs-on: ubuntu-latest
+    needs: api-tests              # only runs if api-tests job passed
+    if: github.event_name == 'push' && github.ref == 'refs/heads/api'
+ 
+    # IMPORTANT: this job needs write permission to create PRs
+    permissions:
+      contents: write
+      pull-requests: write
+ 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+ 
+      - name: Create Pull Request to main
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
+          base: main                            # PR target branch
+          head: api                             # PR source branch
+          title: "✅ API tests passed — merge api → main"
+          body: |
+            ## Automated PR
+ 
+            All API tests passed on the `api` branch.
+ 
+            **Triggered by:** ${{ github.actor }}
+            **Commit:** ${{ github.sha }}
+            **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+ 
+            ### What was tested
+            - API endpoint tests (pytest)
+ 
+            Merge this PR to deploy to production.
+          labels: automated, api-tested
+          draft: false
+
