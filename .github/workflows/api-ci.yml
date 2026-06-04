@@ -65,3 +65,31 @@ jobs:
             Merge this PR to deploy to production.
           labels: automated, api-tested
           draft: false
+
+  deploy-to-aws:
+    runs-on: ubuntu-latest
+    needs: apitests # Gatekeeper: Only deploy if tests pass!
+    
+    steps:
+      - name: Execute Remote SSH Commands to Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_IP }}
+          username: ${{ secrets.AWS_SSH_USERNAME }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            # Navigate to the project folder on EC2
+            cd ~/ci-cd
+            
+            # Fetch and pull the newest code from main
+            git pull origin main
+            
+            # Activate environment and update any new dependencies
+            source .venv/bin/activate
+            pip install -r backend/requirements.txt
+            
+            # Stop any older FastAPI instances running on port 8000
+            fuser -k 8000/tcp || true
+            
+            # Start FastAPI in the background using nohup (so it stays alive when SSH closes)
+            nohup uvicorn backend.main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
