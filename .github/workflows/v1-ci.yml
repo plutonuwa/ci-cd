@@ -76,6 +76,9 @@ jobs:
       pull-requests: write
  
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: create pr
         uses: peter-evans/create-pull-request@v7
         with:
