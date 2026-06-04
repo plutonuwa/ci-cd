@@ -48,7 +48,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
           base: main                            # PR target branch
-          branch: api-changes                   # FIXED: The internal branch name the action uses to track the PR
+          branch: api                   # FIXED: The internal branch name the action uses to track the PR
           title: "✅ API tests passed — merge api → main"
           body: |
             ## Automated PR
