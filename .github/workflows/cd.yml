@@ -1,23 +1,46 @@
 name: AWS EC2 Deployment
 
-# on:
-#   push:
-#     branches: [main]
-
 on:
-  workflow_run:
-    workflows: ["CI Pipeline"]   # Must match the exact 'name:' string at the top of your api-ci.yml file
-    types:
-      - completed                 # Triggers when the target workflow finishes
+  push:
+    branches: [main]
+
+# on:
+#   workflow_run:
+#     workflows: ["CI Pipeline"]   # Must match the exact 'name:' string at the top of your api-ci.yml file
+#     types:
+#       - completed                 # Triggers when the target workflow finishes
 
 
 jobs:
+  api-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12', cache: 'pip' }
+
+      - name: Install dependencies
+        run: |
+            python -m venv .venv  
+            source .venv/bin/activate 
+            pip install -r ./backend/requirements.txt
+
+      - name: Run API tests
+        run: |
+            source .venv/bin/activate 
+            pytest ./backend/tests -v --tb=short
+            
   # --- CD Stage ---
   deploy-to-aws:
-    runs-on: ubuntu-latest
-    # This 'if' condition acts as your cross-pipeline gatekeeper!
-    # It ensures deployment ONLY fires if the testing workflow execution was a success.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # runs-on: ubuntu-latest
+    # # This 'if' condition acts as your cross-pipeline gatekeeper!
+    # # It ensures deployment ONLY fires if the testing workflow execution was a success.
+    # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: api-test   # This ensures the deploy job only runs if the api-test job passed
     
     steps:
       - name: Execute Remote SSH Commands to Deploy
