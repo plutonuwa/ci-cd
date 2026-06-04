@@ -15,7 +15,7 @@ fixture they declare as a parameter.
 
 import os
 import pytest
-from backend.test.api_test_runner import ApiTestRunner
+from backend.tests.api_test_runner import ApiTestRunner
 
 # ---------------------------------------------------------------------------
 # Attempt to import the FastAPI app.

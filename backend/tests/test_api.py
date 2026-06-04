@@ -20,7 +20,7 @@ Run modes:
 """
 
 import pytest
-from backend.test.test_cases import (
+from backend.tests.test_cases import (
     ITEMS_TEST_CASES,
     AUTH_TEST_CASES,
     VALIDATION_TEST_CASES,
