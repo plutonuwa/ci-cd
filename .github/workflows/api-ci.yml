@@ -68,7 +68,7 @@ jobs:
 
   deploy-to-aws:
     runs-on: ubuntu-latest
-    needs: apitests # Gatekeeper: Only deploy if tests pass!
+    needs: create-pr # Gatekeeper: Only deploy if tests pass!
     
     steps:
       - name: Execute Remote SSH Commands to Deploy
