@@ -76,13 +76,13 @@ jobs:
       pull-requests: write
  
     steps:
-      name: create pr
-      uses: peter-evans/create-pull-request@v7
-      with:
-        branch: "v1"
-        title: "auto update"
-        body: "auto update dayo!"
-        base: main
+      - name: create pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: "v1"
+          title: "auto update"
+          body: "auto update dayo!"
+          base: main
 
 
   deploy-to-aws:
