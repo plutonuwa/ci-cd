@@ -29,12 +29,48 @@ jobs:
             source .venv/bin/activate 
             pytest ./backend/tests -v --tb=short
   
+  # create-pr:
+  #   runs-on: ubuntu-latest
+  #   needs: apitests              # only runs if api-tests job passed
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/v1'
+ 
+  #   # IMPORTANT: this job needs write permission to create PRs
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+ 
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+ 
+  #     - name: Create Pull Request to main
+  #       uses: peter-evans/create-pull-request@v6
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
+  #         base: main                            # PR target branch
+  #         branch: v1-change                   # FIXED: The internal branch name the action uses to track the PR
+  #         title: "✅ API tests passed — merge v1 → main"
+  #         body: |
+  #           ## Automated PR
+ 
+  #           All API tests passed on the `v1` branch.
+ 
+  #           **Triggered by:** ${{ github.actor }}
+  #           **Commit:** ${{ github.sha }}
+  #           **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+ 
+  #           ### What was tested
+  #           - API endpoint tests (pytest)
+ 
+  #           Merge this PR to deploy to production.
+  #         labels: automated, api-tested
+  #         draft: false
+
   create-pr:
     runs-on: ubuntu-latest
-    needs: apitests              # only runs if api-tests job passed
+    needs: apitests              # Only runs if api-tests job passed
     if: github.event_name == 'push' && github.ref == 'refs/heads/v1'
  
-    # IMPORTANT: this job needs write permission to create PRs
     permissions:
       contents: write
       pull-requests: write
@@ -43,28 +79,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
  
-      - name: Create Pull Request to main
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}   # auto-provided, no setup needed
-          base: main                            # PR target branch
-          branch: v1-change                   # FIXED: The internal branch name the action uses to track the PR
-          title: "✅ API tests passed — merge v1 → main"
-          body: |
-            ## Automated PR
- 
-            All API tests passed on the `v1` branch.
- 
+      # FIXED: Using GitHub's Native CLI ensures exact v1 -> main direction
+      - name: Create Pull Request from v1 to main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head v1 \
+            --title "✅ API tests passed — merge v1 → main" \
+            --body "## Automated PR
+            All API tests passed successfully on the \`v1\` branch.
+            
             **Triggered by:** ${{ github.actor }}
-            **Commit:** ${{ github.sha }}
-            **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
- 
-            ### What was tested
-            - API endpoint tests (pytest)
- 
-            Merge this PR to deploy to production.
-          labels: automated, api-tested
-          draft: false
+            **Commit:** ${{ github.sha }}" || echo "PR already exists"
 
   deploy-to-aws:
     runs-on: ubuntu-latest
