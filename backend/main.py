@@ -9,7 +9,7 @@ class Item(BaseModel):
     name: str
     price: float
 
-LocalStage = [Item(name="Item 1", price=10.0), Item(name="Item 2", price=20.0), Item(name="Item 3", price=30.0)]
+LocalStage = [Item(name="Item 1", price=10.0), Item(name="Item 2", price=20.0), Item(name="Item 3", price=30.0), Item(name="Item 4", price=40.0), Item(name="Item 5", price=50.0)]
 
 @app.get("/")
 def read_root():
