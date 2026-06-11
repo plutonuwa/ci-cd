@@ -5,3 +5,8 @@ node_modules
 
 __pycache__
 *.pyc
+
+api_pytest.py
+pytest.ini
+
+my-app/*

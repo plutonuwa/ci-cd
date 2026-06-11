@@ -1,8 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from uuid import uuid4, UUID
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+CORS_ORIGINS = ["*"]  # Allow all origins for simplicity, adjust as needed
+app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS)
 
 class Item(BaseModel):
     id: UUID = Field(default_factory=uuid4)
