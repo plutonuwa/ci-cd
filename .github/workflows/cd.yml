@@ -61,8 +61,7 @@ jobs:
     # # This 'if' condition acts as your cross-pipeline gatekeeper!
     # # It ensures deployment ONLY fires if the testing workflow execution was a success.
     # if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    needs: api-test   # This ensures the deploy job only runs if the api-test job passed
-    needs: release    # This ensures the deploy job only runs if the release job passed
+    needs: [api-test, release]   # This ensures the deploy job only runs if the release job passed
 
     steps:
       - name: Execute Remote SSH Commands to Deploy
