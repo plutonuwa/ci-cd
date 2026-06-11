@@ -33,6 +33,27 @@ jobs:
         run: |
             source .venv/bin/activate 
             pytest ./backend/tests -v --tb=short
+  
+  # Automate Semantic Versioning and Tag Creation 
+  release:
+    runs-on: ubuntu-latest
+    needs: api-test # Only create a version if all tests pass!
+    permissions:
+      contents: write # CRITICAL: Allows the action to create and push a git tag
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Crucial: Fetches all git history so it can read previous tags
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true            # Prefixes the tag with 'v' (e.g., v1.0.0)
+          DEFAULT_BUMP: patch     # If your commit message doesn't match a rule, default to a patch fix
             
   # --- CD Stage ---
   deploy-to-aws:
@@ -41,7 +62,8 @@ jobs:
     # # It ensures deployment ONLY fires if the testing workflow execution was a success.
     # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     needs: api-test   # This ensures the deploy job only runs if the api-test job passed
-    
+    needs: release    # This ensures the deploy job only runs if the release job passed
+
     steps:
       - name: Execute Remote SSH Commands to Deploy
         uses: appleboy/ssh-action@v1.0.3
@@ -50,6 +72,8 @@ jobs:
           username: ${{ secrets.AWS_SSH_USERNAME }}
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
+            set -e  # Exit immediately if any command fails
+            
             # Navigate to the project folder on EC2
             cd ~/ci-cd
             
