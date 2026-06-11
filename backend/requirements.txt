@@ -4,3 +4,4 @@ uvicorn
 httpx2
 requests
 beautifulsoup4 
+pytest-playwright
