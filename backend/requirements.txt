@@ -3,3 +3,4 @@ fastapi
 uvicorn
 httpx2
 requests
+beautifulsoup4 
