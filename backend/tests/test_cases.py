@@ -66,7 +66,7 @@ ITEMS_TEST_CASES = [
         id       = "list all items — extract first item id and name",
         method   = "get",
         endpoint = "/items",
-        contains = {"count": 5},
+        contains = {"count": 6},
         extract  = {
             # Store the first item's id and name for use in later cases
             "item_id":   ["data", 0, "id"],
