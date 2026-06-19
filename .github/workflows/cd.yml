@@ -1,8 +1,8 @@
 name: AWS EC2 Deployment
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
 # on:
 #   workflow_run:
@@ -11,9 +11,39 @@ on:
 #       - completed                 # Triggers when the target workflow finishes
 
 
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Semver bump type — major.minor.patch'
+        required: true
+        type: choice
+        default: 'patch'
+        options:
+          - patch      # bug fixes only        — v1.0.0 → v1.0.1
+          - minor      # new feature, compatible — v1.0.0 → v1.1.0
+          - major      # breaking change        — v1.0.0 → v2.0.0
+ 
+      deploy_target:
+        description: 'Where to deploy'
+        required: true
+        type: choice
+        default: 'aws-ec2'
+        options:
+          - aws-ec2
+          - skip-deploy   # tag + release only, no deployment (useful for hotfix prep)
+ 
+      run_tests:
+        description: 'Run test suite before tagging?'
+        required: false
+        type: boolean
+        default: true
+
+
 jobs:
   api-test:
     runs-on: ubuntu-latest
+    if: ${{ inputs.run_tests == true }}
 
     steps:
       - name: Checkout code
@@ -38,8 +68,13 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: api-test # Only create a version if all tests pass!
+    if: ${{ always() && (needs.api-test.result == 'success' || needs.api-test.result == 'skipped') }}
+
     permissions:
       contents: write # CRITICAL: Allows the action to create and push a git tag
+
+    outputs:
+      new_tag: ${{ steps.tag_version.outputs.new_tag }}
     
     steps:
       - name: Checkout code
@@ -54,6 +89,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true            # Prefixes the tag with 'v' (e.g., v1.0.0)
           DEFAULT_BUMP: patch     # If your commit message doesn't match a rule, default to a patch fix
+      
+      - name: Show created tag
+        run: echo "Released ${{ steps.tag_version.outputs.new_tag }}"
             
   # --- CD Stage ---
   deploy-to-aws:
@@ -62,6 +100,7 @@ jobs:
     # # It ensures deployment ONLY fires if the testing workflow execution was a success.
     # if: ${{ github.event.workflow_run.conclusion == 'success' }}
     needs: [api-test, release]
+    if: ${{ inputs.deploy_target == 'aws-ec2' }}
 
     steps:
       - name: Execute Remote SSH Commands to Deploy
@@ -88,3 +127,10 @@ jobs:
             
             # Start FastAPI in the background using nohup (so it stays alive when SSH closes)
             nohup uvicorn backend.main:app --host 0.0.0.0 --port 8000 > fastapi.log 2>&1 &
+    
+      - name: Deployment summary
+        run: |
+          echo "Deployed tag: ${{ needs.release.outputs.new_tag }}"
+          echo "Target: AWS EC2"
+
+          
